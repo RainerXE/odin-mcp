@@ -21,4 +21,3 @@ main :: proc() {
 	})
 	mcp.server_run(&server)
 }
-

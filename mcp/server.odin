@@ -187,7 +187,10 @@ _handle_tools_list :: proc(s: ^MCPServer, id: RPCID) -> string {
 		strings.write_string(&b, `,"description":`)
 		json_escape_string(&b, tool.defn.description)
 		strings.write_string(&b, `,"inputSchema":`)
-		strings.write_string(&b, tool.defn.input_schema)
+		if !json_write_compact_fragment(&b, tool.defn.input_schema) {
+			// A malformed registration must not corrupt the entire stdio frame.
+			strings.write_string(&b, `{}`)
+		}
 		strings.write_byte(&b, '}')
 	}
 	strings.write_string(&b, `]}`)

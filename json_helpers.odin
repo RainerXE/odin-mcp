@@ -7,6 +7,7 @@
 package mcp
 
 import "base:runtime"
+import "core:encoding/json"
 import "core:strings"
 import "core:fmt"
 
@@ -35,6 +36,24 @@ json_escape_string :: proc(b: ^strings.Builder, s: string) {
 		}
 	}
 	strings.write_byte(b, '"')
+}
+
+// json_write_compact_fragment validates a pre-serialized JSON fragment and
+// writes its compact representation into b. MCP stdio messages are delimited
+// by newlines and therefore cannot contain pretty-printing line breaks.
+json_write_compact_fragment :: proc(b: ^strings.Builder, fragment: string) -> bool {
+	value, parse_err := json.parse_string(fragment, allocator = context.temp_allocator)
+	if parse_err != nil {
+		return false
+	}
+
+	encoded, marshal_err := json.marshal(value, allocator = context.temp_allocator)
+	if marshal_err != nil {
+		return false
+	}
+
+	strings.write_string(b, string(encoded))
+	return true
 }
 
 // rpcid_to_json writes the JSON representation of id into b.

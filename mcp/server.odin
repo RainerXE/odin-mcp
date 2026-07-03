@@ -84,6 +84,11 @@ _extract_request :: proc(val: json.Value) -> (req: MCPRequest, ok: bool) {
 	obj, is_obj := val.(json.Object)
 	if !is_obj { return {}, false }
 
+	rpc_val, has_rpc := obj["jsonrpc"]
+	if !has_rpc { return {}, false }
+	rpc_str, rpc_is_str := rpc_val.(json.String)
+	if !rpc_is_str || string(rpc_str) != "2.0" { return {}, false }
+
 	method_val, has_method := obj["method"]
 	if !has_method { return {}, false }
 	method_str, is_str := method_val.(json.String)
@@ -98,6 +103,7 @@ _extract_request :: proc(val: json.Value) -> (req: MCPRequest, ok: bool) {
 		case json.Float:   req.id = i64(v)
 		case json.String:  req.id = string(v)
 		case json.Null, json.Boolean, json.Array, json.Object:
+			return {}, false
 		}
 	}
 
@@ -112,7 +118,7 @@ _dispatch :: proc(s: ^MCPServer, req: MCPRequest) -> (resp: string, has_resp: bo
 	case "initialize":
 		return _handle_initialize(s, req.id), true
 
-	case "initialized":
+	case "notifications/initialized", "initialized":
 		return "", false
 
 	case "ping":

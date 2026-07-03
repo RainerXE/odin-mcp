@@ -1,0 +1,8 @@
+.DS_Store
+/plans
+/build/
+/bin/
+*.exe
+*.obj
+*.pdb
+

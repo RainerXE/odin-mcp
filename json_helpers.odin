@@ -18,10 +18,20 @@ json_escape_string :: proc(b: ^strings.Builder, s: string) {
 		switch c {
 		case '"':  strings.write_string(b, `\"`)
 		case '\\': strings.write_string(b, `\\`)
+		case '\b': strings.write_string(b, `\b`)
+		case '\f': strings.write_string(b, `\f`)
 		case '\n': strings.write_string(b, `\n`)
 		case '\r': strings.write_string(b, `\r`)
 		case '\t': strings.write_string(b, `\t`)
-		case:      strings.write_rune(b, c)
+		case:
+			if c < 0x20 {
+				hex := "0123456789abcdef"
+				strings.write_string(b, `\u00`)
+				strings.write_byte(b, hex[(c >> 4) & 0xf])
+				strings.write_byte(b, hex[c & 0xf])
+			} else {
+				strings.write_rune(b, c)
+			}
 		}
 	}
 	strings.write_byte(b, '"')

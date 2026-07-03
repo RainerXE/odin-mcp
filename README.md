@@ -143,9 +143,14 @@ Long-lived data (a database handle, cached config, etc.) should be allocated bef
 
 ## Protocol
 
-Implements [MCP 2024-11-05](https://modelcontextprotocol.io/specification) over stdio with Content-Length framing (identical to LSP).
+Implements MCP `2025-11-25` over stdio. Each JSON-RPC message is UTF-8 JSON on
+one line followed by `\n`, as required by the MCP stdio transport. The server
+accepts `notifications/initialized` and keeps the older `initialized` spelling
+temporarily for compatibility.
 
-Supported methods: `initialize`, `initialized`, `ping`, `tools/list`, `tools/call`, `resources/list`, `resources/read`, `prompts/list`, `prompts/get`.
+Supported methods: `initialize`, `notifications/initialized`, `ping`,
+`tools/list`, `tools/call`, `resources/list`, `resources/read`, `prompts/list`,
+and `prompts/get`.
 
 ---
 

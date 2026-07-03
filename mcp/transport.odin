@@ -1,66 +1,34 @@
-// transport.odin — Content-Length framing for the MCP stdio transport.
-// Framing is identical to LSP: each message is preceded by
-// "Content-Length: N\r\n\r\n" followed by N UTF-8 bytes of JSON.
+// transport.odin — newline-delimited JSON for the MCP stdio transport.
 package mcp
 
 import "base:runtime"
 import "core:bufio"
-import "core:fmt"
 import "core:io"
 import "core:os"
-import "core:strconv"
 import "core:strings"
 
-// read_message reads one framed MCP message from reader.
+// read_message reads one newline-delimited MCP message from reader.
 // Returns the raw JSON bytes on success (allocated with allocator).
-// Returns ok=false on EOF or a malformed frame.
+// Returns ok=false on EOF or an empty message.
 read_message :: proc(reader: ^bufio.Reader, allocator: runtime.Allocator) -> (json_bytes: []u8, ok: bool) {
-	content_length := -1
-
-	for {
-		line, err := bufio.reader_read_string(reader, '\n', context.temp_allocator)
-		if err != nil {
-			return nil, false
-		}
-		line = strings.trim_right(line, "\r\n")
-		if line == "" {
-			break
-		}
-		if strings.has_prefix(line, "Content-Length:") {
-			val := strings.trim_space(line[len("Content-Length:"):])
-			n, parse_ok := strconv.parse_int(val)
-			if !parse_ok || n < 0 {
-				return nil, false
-			}
-			content_length = n
-		}
-	}
-
-	if content_length < 0 {
+	line, err := bufio.reader_read_string(reader, '\n', context.temp_allocator)
+	if err != nil {
 		return nil, false
 	}
-	if content_length == 0 {
-		return []u8{}, true
+	line = strings.trim_right(line, "\r\n")
+	if line == "" {
+		return nil, false
 	}
-
-	buf := make([]u8, content_length, allocator)
-	total := 0
-	for total < content_length {
-		n, err := bufio.reader_read(reader, buf[total:])
-		total += n
-		if err != nil && total < content_length {
-			return nil, false
-		}
-	}
+	buf := make([]u8, len(line), allocator)
+	copy(buf, transmute([]u8)line)
 	return buf, true
 }
 
-// write_message writes one framed MCP message to stdout.
+// write_message writes one JSON message followed by a newline to stdout.
 write_message :: proc(json_bytes: []u8) -> bool {
-	header := fmt.tprintf("Content-Length: %d\r\n\r\n", len(json_bytes))
 	w := os.to_writer(os.stdout)
-	_, err1 := io.write_string(w, header)
-	_, err2 := io.write(w, json_bytes)
+	_, err1 := io.write(w, json_bytes)
+	_, err2 := io.write_string(w, "\n")
 	return err1 == nil && err2 == nil
 }
 

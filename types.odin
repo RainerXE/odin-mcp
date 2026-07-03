@@ -70,4 +70,4 @@ ERR_INVALID_PARAMS   :: -32602
 ERR_INTERNAL_ERROR   :: -32603
 
 // MCP protocol version this library targets.
-MCP_PROTOCOL_VERSION :: "2024-11-05"
+MCP_PROTOCOL_VERSION :: "2025-11-25"
